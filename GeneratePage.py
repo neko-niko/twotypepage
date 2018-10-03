@@ -10,18 +10,28 @@ class GeneratePage(object):     #实现了包含两种类别图片的框选
         self.text_lst = os.listdir('./textdir')
         self.img_lst = os.listdir('./handle_img_dir')
         self.table_lst = os.listdir('./tbdir')
+        self.title_lst  = os.listdir('./titledir')
         self.lth = [2,3,4]
         self.name = 0
     def generate_html(self):
         self.name += 1
         html_strcut = []
+        html_strcut.append(10)
         keys_lst = []       #表示为文本（1）或图片（2）
         values_lst = []     #表示文本或图片的具体路径
         # html_lst
-        for _ in range(random.choice(self.lth)):
-            html_strcut.append(random.choice([1,2,2]))
+        total_len = random.choice(self.lth)
+        for _ in range(total_len):
+            html_strcut.append(random.choice([1,2,2,3]))
         body_str = ''
         for i in html_strcut:
+            if i == 10:         #如果为主标题
+                keys_lst.append(i)
+                title_path = os.path.join('./titledir',random.choice(self.title_lst))
+                values_lst.append(title_path)
+                with open(title_path,'r',encoding='utf-8') as title:
+                    title = title.read()
+                body_str += '''<h1 align="center">{main_title}</h1>'''.format(main_title = title)
             if i == 1:
                 keys_lst.append(i)
                 text_path = os.path.join('./textdir',random.choice(self.text_lst))
@@ -44,6 +54,19 @@ class GeneratePage(object):     #实现了包含两种类别图片的框选
                     values_lst.append("./tbdir\\{img_}".format(img_ = img))
                     img_path = "../tbdir/{img_}".format(img_ = img)
                     body_str += '''<p align="center"><img src="{path_}"/></p><br>'''.format(path_=img_path)
+            if i == 3:
+                keys_lst.append(3)
+                text_path = os.path.join('./textdir', random.choice(self.text_lst))
+                values_lst.append(text_path)
+                lt_path = os.path.join('./titledir',random.choice(self.title_lst))
+                with open(lt_path,'r',encoding='utf-8') as title:
+                    title = title.read()
+                body_str += '''<h3 align="center">{little_title}</h3>'''.format(little_title = title)
+                with open(text_path,'r',encoding='utf-8') as text:
+                    total_text = text.read()
+                text_len = int((len(total_text)/60) + 1)         #计算行数
+                for line_num in range(text_len):
+                    body_str +=  '''<h3 align="center">{text}</h3>'''.format(text = total_text[60*line_num:60*(line_num+1)])
         html_str = '''<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title></title> </head><body>{body_str}</body></html>'''.format(body_str=body_str)
         with open('./htmldir/%s.html' % self.name,'w',encoding='utf-8') as html:
             html.write(html_str)
@@ -76,24 +99,43 @@ class GeneratePage(object):     #实现了包含两种类别图片的框选
             for i in range(block_len):
                 print(file_path[i].split('\\')[0].split('/')[-1])
                 if (struct[i] == 1 and 'text' not in file_path[i].split('\\')[0].split('/')[-1]) or \
-                        (struct[i] == 2 and ('img' not in file_path[i].split('\\')[0].split('/')[-1] and 'tb' not in file_path[i].split('\\')[0].split('/')[-1])):
+                        (struct[i] == 2 and ('img' not in file_path[i].split('\\')[0].split('/')[-1] and 'tb' not in file_path[i].split('\\')[0].split('/')[-1])) or\
+                        (struct[i] == 10 and 'title' not in file_path[i].split('\\')[0].split('/')[-1]):
                     raise Exception("指定的类型与指定的文件不匹配")
+        block_dict = {}
         page_cot = 1
         text_block_cot = 1
         img_block_cot = 1
         tb_block_cot = 1
-        if struct[0] == 1:      #如果第一个块为文本块
-            global_level = 108  #定义全局高度为108
-        elif struct[0] == 2:    #如果第一个块为图像块
-            global_level = 114  #定义全局高度为114
+        lt_block_cot = 1
+        if struct[0] != 10:
+            if struct[0] == 1 or struct[0] == 3:      #如果第一个块为文本块
+                global_level = 108  #定义全局高度为108
+            elif struct[0] == 2:    #如果第一个块为图像块
+                global_level = 114  #定义全局高度为114
+            else:
+                raise Exception('初始化全局高度时错误，请检查您输入的结构信息是否符合规定')
         else:
-            raise Exception('初始化全局高度时错误，请检查您输入的结构信息是否符合规定')
-        block_dict = {}
+            print('此块有主标题')
+            del struct[0]
+            del file_path[0]
+            block_dict['maintitle_1'] = (700,128)
+            block_dict['maintitle_2'] = (1778,128)
+            block_dict['maintitle_3'] = (700,212)
+            block_dict['maintitle_4'] = (1778,212)
+            if struct[0] == 1 or struct[0] == 3:
+                global_level = 252
+            elif struct[0] == 2:
+                global_level = 259
+            else:
+                raise Exception('初始化全局高度时错误，请检查您输入的结构信息是否符合规定')
+            # if struct[0] == 1:
+            #     global_level =
         for block in range(len(struct)):
             if struct[block] == 1:  #如果此块为文本块
                 if block == 0:      #如果此块为第一个块
                     text_block_start_level = global_level
-                elif struct[block-1] == 1:  #如果上一块为文本块
+                elif struct[block-1] == 1 or struct[block-1] == 3:  #如果上一块为文本块
                     global_level += 25      #整体高度+25
                     text_block_start_level = global_level
                 else:                       #如果上一块为图像块
@@ -121,7 +163,7 @@ class GeneratePage(object):     #实现了包含两种类别图片的框选
                 height = int(str(img).split('\\')[-1].split('.')[0].split('_')[1].split('$')[0]) * 2.5
                 if block == 0:
                     img_block_start_level = global_level
-                elif struct[block-1] == 1:
+                elif struct[block-1] == 1 or struct[block-1] == 3:
                     global_level += 32
                     img_block_start_level = global_level
                 else:
@@ -149,9 +191,45 @@ class GeneratePage(object):     #实现了包含两种类别图片的框选
                         block_dict[block_name+'_4']=(int(1240+(((width)/2)+6)),int(img_block_start_level+height+8))
                         global_level = height + 8 + global_level
                         tb_block_cot += 1
+            elif struct[block] == 3:
+                global_level += 102
+                if block == 0:  # 如果此块为第一个块
+                    # text_block_start_level = global_level
+                    pass
+                elif struct[block - 1] == 1 or struct[block - 1] == 3:  # 如果上一块为文本块
+                    global_level += 25  # 整体高度+25
+                    # text_block_start_level = global_level
+                else:  # 如果上一块为图像块
+                    global_level += 130  # 整体高度+130
+                    # text_block_start_level = global_level
+                text_block_start_level = global_level
+                block_name = 'lt' + str(lt_block_cot)
+                block_dict[block_name+'_1'] = (830,int(global_level-102))
+                block_dict[block_name+'_2'] = (1648,int(global_level-102))
+                block_dict[block_name+'_3'] = (830,int(global_level-4))
+                block_dict[block_name+'_4'] = (1648,int(global_level-4))
+                lt_block_cot += 1
+                global_level, page_cot, text_block_cot, img_block_cot, block_dict = \
+                    self.cal_text(file_path[block], global_level, page_cot, text_block_start_level, text_block_cot,
+                                  img_block_cot, block_dict)
+                if page_cot != 1:
+                    print('页码超过1，跳出')
+                    break
+                else:
+                    continue
         if page_cot == 1:       #如果将当前的所有块都添加后，总页数依然为1，则保存数据到本地
             with open('./jsondir/%s.json' % self.name,'w') as js:
                 json.dump(block_dict,js)
+        # else:
+        #     page_cot = 1
+        #     text_block_cot = 1
+        #     img_block_cot = 1
+        #     tb_block_cot = 1
+        #     block_dict = {}
+        #     block_dict['maintitle_1'] = (700,128)
+        #     block_dict['maintitle_2'] = (1778,128)
+        #     block_dict['maintitle_3'] = (700,200)
+        #     block_dict['maintitle_4'] = (1778,200)
 
     def cal_text(self,path,global_level,page_cot,text_block_start_level,text_block_cot,img_block_cot,block_dict):
         '''文本路径，全局高度，页码，文本块起始高度，文本块计数，图像块计数，块字典'''
@@ -203,4 +281,4 @@ if __name__=='__main__':
         print(keys,values)
         pdf_path = caozuo.generate_pdf(html_path)
         caozuo.generate_png(pdf_path)
-        caozuo.cal_block_size(keys,values)
+        # caozuo.cal_block_size(keys,values)
