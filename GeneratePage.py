@@ -9,6 +9,7 @@ class GeneratePage(object):     #实现了包含两种类别图片的框选
     def __init__(self):
         self.text_lst = os.listdir('./textdir')
         self.img_lst = os.listdir('./handle_img_dir')
+        self.table_lst = os.listdir('./tbdir')
         self.lth = [2,3,4]
         self.name = 0
     def generate_html(self):
@@ -18,7 +19,7 @@ class GeneratePage(object):     #实现了包含两种类别图片的框选
         values_lst = []     #表示文本或图片的具体路径
         # html_lst
         for _ in range(random.choice(self.lth)):
-            html_strcut.append(random.choice([1,1,2,2]))
+            html_strcut.append(random.choice([1,2,2]))
         body_str = ''
         for i in html_strcut:
             if i == 1:
@@ -32,10 +33,17 @@ class GeneratePage(object):     #实现了包含两种类别图片的框选
                     body_str +=  '''<h3 align="center">{text}</h3>'''.format(text = total_text[60*line_num:60*(line_num+1)])
             if i == 2:
                 keys_lst.append(2)
-                img = random.choice(self.img_lst)
-                values_lst.append("./handle_img_dir\\{img_}".format(img_ = img))
-                img_path = "../handle_img_dir/{img_}".format(img_ = img)
-                body_str += '''<p align="center"><img src="{path_}"/></p><br>'''.format(path_=img_path)
+                lable = random.choice([1,2])        #随机选取图片或表格
+                if lable == 1:
+                    img = random.choice(self.img_lst)
+                    values_lst.append("./handle_img_dir\\{img_}".format(img_ = img))
+                    img_path = "../handle_img_dir/{img_}".format(img_ = img)
+                    body_str += '''<p align="center"><img src="{path_}"/></p><br>'''.format(path_=img_path)
+                else:
+                    img = random.choice(self.table_lst)
+                    values_lst.append("./tbdir\\{img_}".format(img_ = img))
+                    img_path = "../tbdir/{img_}".format(img_ = img)
+                    body_str += '''<p align="center"><img src="{path_}"/></p><br>'''.format(path_=img_path)
         html_str = '''<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title></title> </head><body>{body_str}</body></html>'''.format(body_str=body_str)
         with open('./htmldir/%s.html' % self.name,'w',encoding='utf-8') as html:
             html.write(html_str)
@@ -67,11 +75,13 @@ class GeneratePage(object):     #实现了包含两种类别图片的框选
             block_len = len(struct)
             for i in range(block_len):
                 print(file_path[i].split('\\')[0].split('/')[-1])
-                if (struct[i] == 1 and 'text' not in file_path[i].split('\\')[0].split('/')[-1]) or (struct[i] == 2 and 'img' not in file_path[i].split('\\')[0].split('/')[-1]):
+                if (struct[i] == 1 and 'text' not in file_path[i].split('\\')[0].split('/')[-1]) or \
+                        (struct[i] == 2 and ('img' not in file_path[i].split('\\')[0].split('/')[-1] and 'tb' not in file_path[i].split('\\')[0].split('/')[-1])):
                     raise Exception("指定的类型与指定的文件不匹配")
         page_cot = 1
         text_block_cot = 1
         img_block_cot = 1
+        tb_block_cot = 1
         if struct[0] == 1:      #如果第一个块为文本块
             global_level = 108  #定义全局高度为108
         elif struct[0] == 2:    #如果第一个块为图像块
@@ -105,6 +115,8 @@ class GeneratePage(object):     #实现了包含两种类别图片的框选
                     continue
             elif struct[block] == 2:      #如果此块为图像块
                 img = file_path[block]
+                lable = str(img).split('\\')[0]
+                print('lable为：'+lable)
                 width = int(str(img).split('\\')[-1].split('.')[0].split('_')[0]) * 2.5
                 height = int(str(img).split('\\')[-1].split('.')[0].split('_')[1].split('$')[0]) * 2.5
                 if block == 0:
@@ -121,13 +133,22 @@ class GeneratePage(object):     #实现了包含两种类别图片的框选
                         json.dump(block_dict,js)
                     break
                 else:
-                    block_name = 'img' + str(img_block_cot)
-                    block_dict[block_name+'_1']=(int(1240-(((width)/2)+6)),int(img_block_start_level))
-                    block_dict[block_name+'_2']=(int(1240+(((width)/2)+6)),int(img_block_start_level))
-                    block_dict[block_name+'_3']=(int(1240-(((width)/2)+6)),int(img_block_start_level+height+8))
-                    block_dict[block_name+'_4']=(int(1240+(((width)/2)+6)),int(img_block_start_level+height+8))
-                    global_level = height + 8 + global_level
-                    img_block_cot += 1
+                    if 'img' in lable:
+                        block_name = 'img' + str(img_block_cot)
+                        block_dict[block_name+'_1']=(int(1240-(((width)/2)+6)),int(img_block_start_level))
+                        block_dict[block_name+'_2']=(int(1240+(((width)/2)+6)),int(img_block_start_level))
+                        block_dict[block_name+'_3']=(int(1240-(((width)/2)+6)),int(img_block_start_level+height+8))
+                        block_dict[block_name+'_4']=(int(1240+(((width)/2)+6)),int(img_block_start_level+height+8))
+                        global_level = height + 8 + global_level
+                        img_block_cot += 1
+                    else:
+                        block_name = 'table' + str(tb_block_cot)
+                        block_dict[block_name+'_1']=(int(1240-(((width)/2)+6)),int(img_block_start_level))
+                        block_dict[block_name+'_2']=(int(1240+(((width)/2)+6)),int(img_block_start_level))
+                        block_dict[block_name+'_3']=(int(1240-(((width)/2)+6)),int(img_block_start_level+height+8))
+                        block_dict[block_name+'_4']=(int(1240+(((width)/2)+6)),int(img_block_start_level+height+8))
+                        global_level = height + 8 + global_level
+                        tb_block_cot += 1
         if page_cot == 1:       #如果将当前的所有块都添加后，总页数依然为1，则保存数据到本地
             with open('./jsondir/%s.json' % self.name,'w') as js:
                 json.dump(block_dict,js)
